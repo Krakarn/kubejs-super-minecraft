@@ -14,8 +14,9 @@ import { ScheduledEvent } from "./scheduled-event";
 import { ServerPlayer } from "./server-player";
 import { ServerWorld } from "./server-world";
 import { World } from "./world";
+import { JavaClass } from "../interfaces/java-class";
 
-export interface Server {
+export interface Server extends JavaClass {
     release(): void;
     updateWorldList(): void;
     getData(): AttachedData;

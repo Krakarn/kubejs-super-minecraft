@@ -26,13 +26,12 @@ const indent = (s) => s ? `    ${s}` : s;
 const indentSource = (s) => s.split('\n').map(indent).join('\n');
 
 const tsconfigRaw = readFileSync(p('./tsconfig.json')).toString();
-console.log(tsconfigRaw);
+console.log('tsconfig.json:', tsconfigRaw);
 const tsconfig = JSON.parse(tsconfigRaw);
 
 const scripts = (prefix) =>
     tsProjects
         .get(prefix)
-        //.src()
         .pipe(ts({
             ...tsconfig.compilerOptions,
             outFile: `./${prefix}_scripts/index.js`,

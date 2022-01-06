@@ -77,6 +77,10 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
+    define("src/kubejs-typings/src/interfaces/java-class", ["require", "exports"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
     define("src/kubejs-typings/src/classes/fluid-stack", ["require", "exports"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });

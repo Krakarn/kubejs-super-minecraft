@@ -1,10 +1,9 @@
 import { ItemEntity } from "../kubejs-typings/src/classes/item-entity";
-import { filter, forEach, has, setGlobal } from "../util";
+import { Player } from "../kubejs-typings/src/classes/player";
+import { filter, forEach, has } from "../util";
 import { getTagItems, getTagsFromConfig, initializeTagItems } from "./tags";
 import { getUnifyConfig, UnifyConfig } from "./unify-config";
 import { tryTag } from "./util";
-
-const RUNNING_PLAYER_INVENTORY_CHANGED = 'running:player.inventory.changed';
 
 export const initializeUnifyServer = (providedConfig?: UnifyConfig) => {
     const config = providedConfig || getUnifyConfig();
@@ -12,114 +11,111 @@ export const initializeUnifyServer = (providedConfig?: UnifyConfig) => {
 
     // Replace input and output of recipes (and iterate over tags!)
     onEvent("recipes", event => {
-        console.log('onEvent recipes');
-        console.log('Unifying recipes for tags:');
-        console.log(tags);
         // Update tags
         initializeTagItems();
 
+        if (!config.flags.RECIPE_UNIFY) return;
+
         // Unify the rest
-        if (config.flags.RECIPE_UNIFY) {
-            const tagItems = getTagItems();
+        const tagItems = getTagItems();
 
-            console.log('forEach tags');
-            forEach(tags, tag => {
-                const ingr = tryTag(tag);
+        forEach(tags, tag => {
+            const ingr = tryTag(tag);
 
-                if (ingr) {
-                    const stacks = filter(ingr.getStacks(), stack => has(config.exclude, stack.getId()));
-                    const oItem = tagItems.get(tag);
+            if (!ingr) return;
 
-                    console.log('forEach stacks');
-                    forEach(stacks, iItem => {
-                        const stackIngr = Ingredient.of(iItem.getId());
+            const stacks = filter(ingr.getStacks(), stack => has(config.exclude, stack.getId()));
+            const oItem = tagItems.get(tag);
 
-                        event.replaceInput({}, stackIngr, Ingredient.of("#"+tag));
+            forEach(stacks, iItem => {
+                const stackIngr = Ingredient.of(iItem.getId());
 
-                        if (oItem) {
-                            event.replaceOutput({}, stackIngr, Ingredient.of(oItem));
-                        }
-                    });
-                }
+                event.replaceInput({}, stackIngr, Ingredient.of("#"+tag));
+
+                if (!oItem) return;
+
+                event.replaceOutput({}, stackIngr, Ingredient.of(oItem));
             });
-        }
+        });
     });
 
     // Handle inventory change (to check for unificaiton)
     // Unfortunately it gets called twice due to setting the inventory.
     onEvent("player.inventory.changed", event => {
-        console.log('onEvent player.inventory.changed');
-        setGlobal(RUNNING_PLAYER_INVENTORY_CHANGED)
-        if (config.flags.INVENTORY_UNIFY) {
-            // Get held item
-            const heldItem = event.getItem();
-            const itemId = heldItem.getId();
-            // Check if item is excluded
-            if (has(config.exclude, itemId)) return;
+        const player = event.getEntity() as Player;
+        if (player.getInventory().getClass().getName() === "net.minecraft.inventory.container.PlayerContainer")
+            return;
 
-            const tagItems = getTagItems();
+        if (!config.flags.INVENTORY_UNIFY) return;
 
-            // Check for every tag in the list
-            console.log('forEach tags');
-            forEach(tags, tag => {
-                const ingr = tryTag(tag);
+        // Get held item
+        const heldItem = event.getItem();
+        const itemId = heldItem.getId();
+        // Check if item is excluded
+        if (has(config.exclude, itemId)) return;
 
-                if (ingr && ingr.test(heldItem)) {
-                    // If item is in tag, determine if it needs to be changed
-                    const tItem = tagItems.get(tag);
+        const tagItems = getTagItems();
 
-                    if (tItem && tItem != itemId) {
-                        // Fix slot number
-                        let slot = event.getSlot();
-                        if (slot <= 5) slot += 36;
-                        else if (slot == 45) slot = 40;
-                        else if (slot >= 36) slot -= 36;
+        // Check for every tag in the list
+        forEach(tags, tag => {
+            const ingr = tryTag(tag);
 
-                        const newItem = Ingredient.of(tItem).getFirst().withCount(heldItem.getCount());
+            if (!ingr || !ingr.test(heldItem)) return;
 
-                        // Update item
-                        event.getEntity().getInventory().set(slot, newItem);
-                    }
-                    return true;
-                }
-            });
-        }
+            // If item is in tag, determine if it needs to be changed
+            const tItem = tagItems.get(tag);
+
+            if (!tItem || tItem === itemId) return;
+
+            // Fix slot number
+            let slot = event.getSlot();
+            if (slot <= 5) slot += 36;
+            else if (slot == 45) slot = 40;
+            else if (slot >= 36) slot -= 36;
+
+            const newItem = Ingredient.of(tItem).getFirst().withCount(heldItem.getCount());
+
+            // Update item
+            event.getEntity().getInventory().set(slot, newItem);
+
+            return true;
+        });
     });
 
     // Items on ground
     onEvent("entity.spawned", event => {
         console.log('onEvent entity.spawned');
-        if (config.flags.ITEM_UNIFY) {
-            const entity = event.getEntity();
+        
+        if (!config.flags.ITEM_UNIFY) return;
 
-            if (entity.getType() == "minecraft:item") {
-                const itemEntity = entity as ItemEntity;
-                const gItem = itemEntity.getItem();
-                const itemId = gItem.getId();
+        const entity = event.getEntity();
 
-                // Check if item is excluded
-                if (has(config.exclude, itemId)) return;
+        if (entity.getType() !== "minecraft:item") return;
 
-                const tagItems = getTagItems();
+        const itemEntity = entity as ItemEntity;
+        const gItem = itemEntity.getItem();
+        const itemId = gItem.getId();
 
-                // Check for every tag in the list
-                console.log('forEach tags');
-                forEach(tags, tag => {
-                    const ingr = tryTag(tag);
+        // Check if item is excluded
+        if (has(config.exclude, itemId)) return;
 
-                    if (ingr && ingr.test(gItem)) {
-                        // If item is in tag, determine if it needs to be changed
-                        const tItem = tagItems.get(tag);
+        const tagItems = getTagItems();
 
-                        if (tItem && tItem != itemId) {
-                            const newItem = Ingredient.of(tItem).getFirst().withCount(gItem.getCount());
-                            itemEntity.setItem(newItem);
-                        }
+        // Check for every tag in the list
+        forEach(tags, tag => {
+            const ingr = tryTag(tag);
 
-                        return true;
-                    }
-                });
-            }
-        }
+            if (!ingr || !ingr.test(gItem)) return;
+
+            // If item is in tag, determine if it needs to be changed
+            const tItem = tagItems.get(tag);
+            
+            if (!tItem || tItem === itemId) return;
+
+            const newItem = Ingredient.of(tItem).getFirst().withCount(gItem.getCount());
+            itemEntity.setItem(newItem);
+
+            return true;
+        });
     });
 };

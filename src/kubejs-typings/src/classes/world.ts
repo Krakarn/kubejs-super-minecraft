@@ -1,3 +1,4 @@
+import { JavaClass } from "../interfaces/java-class";
 import { AABB } from "./aabb";
 import { AttachedData } from "./attached-data";
 import { BlockContainer } from "./block-container";
@@ -15,7 +16,7 @@ import { ResourceLocation } from "./resource-location";
 import { ScriptType } from "./script-type";
 import { Server } from "./server";
 
-export interface World {
+export interface World extends JavaClass {
     getSide(): ScriptType;
     getData(): AttachedData;
     getGameRules(): GameRules;

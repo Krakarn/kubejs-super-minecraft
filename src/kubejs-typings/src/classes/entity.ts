@@ -1,5 +1,6 @@
 import { Component } from "../interfaces/component";
 import { CompoundTag } from "../interfaces/compound-tag";
+import { JavaClass } from "../interfaces/java-class";
 import { UUID } from "../interfaces/uuid";
 import { BlockContainer } from "./block-container";
 import { BlockPos } from "./block-pos";
@@ -12,7 +13,7 @@ import { Server } from "./server";
 import { SoundEvent } from "./sound-event";
 import { World } from "./world";
 
-export interface Entity {
+export interface Entity extends JavaClass {
     getLevel(): World;
     getWorld(): World;
     getServer(): Server;

@@ -1,4 +1,5 @@
 import { Copyable } from "../interfaces/copyable";
+import { JavaClass } from "../interfaces/java-class";
 import { FluidStack } from "./fluid-stack";
 import { IngredientStack } from "./ingredient-stack";
 import { Item } from "./item";
@@ -19,7 +20,7 @@ export interface IngredientStatic {
 	ingredientFromRecipeJson(json: JsonElement): Ingredient;
 }
 
-export interface Ingredient extends Copyable<Ingredient> {
+export interface Ingredient extends Copyable<Ingredient>, JavaClass {
 	test(stack: ItemStack): boolean;
 	testVanilla(stack: ItemStack): boolean;
 	testVanillaItem(item: Item): boolean;

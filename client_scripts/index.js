@@ -77,6 +77,10 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
+    define("src/kubejs-typings/src/interfaces/java-class", ["require", "exports"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
     define("src/kubejs-typings/src/classes/fluid-stack", ["require", "exports"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -439,16 +443,13 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
         exports.initializeTagItems = exports.getTagItems = exports.setTagItems = exports.getTagsFromConfig = void 0;
+        var GLOBAL_UNIFY_TAGITEMS = 'unify:tagitems';
         var getTagsFromConfig = function (config) {
-            console.log('getTagsFromConfig');
             var tags = new Set();
-            console.log('forEach config.includeTags');
             (0, util_2.forEach)(config.includeTags, function (tag) {
                 tags.add(tag);
             });
-            console.log('forEach config.tagGen');
             (0, util_2.forEach)(config.tagGen, function (types, material) {
-                console.log('forEach types');
                 (0, util_2.forEach)(types, function (type) {
                     tags.add("forge:".concat(type, "/").concat(material));
                 });
@@ -456,7 +457,6 @@ const runModule = () => {
             return Array.from(tags);
         };
         exports.getTagsFromConfig = getTagsFromConfig;
-        var GLOBAL_UNIFY_TAGITEMS = 'unify:tagitems';
         var setTagItems = function (tagItems) {
             (0, util_2.setGlobal)(GLOBAL_UNIFY_TAGITEMS, tagItems);
         };
@@ -464,29 +464,26 @@ const runModule = () => {
         var getTagItems = function () { return (0, util_2.getGlobal)(GLOBAL_UNIFY_TAGITEMS); };
         exports.getTagItems = getTagItems;
         var initializeTagItems = function () {
-            console.log('initializeTagItems');
             var config = (0, unify_config_2.getUnifyConfig)();
             var tags = (0, exports.getTagsFromConfig)(config);
             // Iterate over tags (they should be loaded)
             var tagItems = new Map();
-            console.log('forEach tags');
             (0, util_2.forEach)(tags, function (tag) {
                 var ingr = (0, util_3.tryTag)(tag);
-                if (ingr) {
-                    var allStacks = ingr.getStacks();
-                    var stacks_1 = (0, util_2.filter)(allStacks, function (x) { return !(0, util_2.has)(config.exclude, x.getId()); });
-                    var foundStack_1;
-                    console.log('forEach config.priorities');
-                    (0, util_2.forEach)(config.priorities, function (mod) {
-                        foundStack_1 = (0, util_2.find)(stacks_1, function (stack) { return stack.getMod() === mod; });
-                        if (foundStack_1)
-                            return true;
-                    });
-                    foundStack_1 = foundStack_1 || (0, util_2.head)(allStacks);
-                    if (foundStack_1) {
-                        tagItems.set(tag, foundStack_1.getId());
-                    }
-                }
+                if (!ingr)
+                    return;
+                var allStacks = ingr.getStacks();
+                var stacks = (0, util_2.filter)(allStacks, function (x) { return !(0, util_2.has)(config.exclude, x.getId()); });
+                var foundStack;
+                (0, util_2.forEach)(config.priorities, function (mod) {
+                    foundStack = (0, util_2.find)(stacks, function (stack) { return stack.getMod() === mod; });
+                    if (foundStack)
+                        return true;
+                });
+                foundStack = foundStack || (0, util_2.head)(allStacks);
+                if (!foundStack)
+                    return;
+                tagItems.set(tag, foundStack.getId());
             });
             (0, exports.setTagItems)(tagItems);
         };

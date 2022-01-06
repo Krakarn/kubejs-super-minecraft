@@ -77,6 +77,10 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
+    define("src/kubejs-typings/src/interfaces/java-class", ["require", "exports"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
     define("src/kubejs-typings/src/classes/fluid-stack", ["require", "exports"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -439,16 +443,13 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
         exports.initializeTagItems = exports.getTagItems = exports.setTagItems = exports.getTagsFromConfig = void 0;
+        var GLOBAL_UNIFY_TAGITEMS = 'unify:tagitems';
         var getTagsFromConfig = function (config) {
-            console.log('getTagsFromConfig');
             var tags = new Set();
-            console.log('forEach config.includeTags');
             (0, util_2.forEach)(config.includeTags, function (tag) {
                 tags.add(tag);
             });
-            console.log('forEach config.tagGen');
             (0, util_2.forEach)(config.tagGen, function (types, material) {
-                console.log('forEach types');
                 (0, util_2.forEach)(types, function (type) {
                     tags.add("forge:".concat(type, "/").concat(material));
                 });
@@ -456,7 +457,6 @@ const runModule = () => {
             return Array.from(tags);
         };
         exports.getTagsFromConfig = getTagsFromConfig;
-        var GLOBAL_UNIFY_TAGITEMS = 'unify:tagitems';
         var setTagItems = function (tagItems) {
             (0, util_2.setGlobal)(GLOBAL_UNIFY_TAGITEMS, tagItems);
         };
@@ -464,29 +464,26 @@ const runModule = () => {
         var getTagItems = function () { return (0, util_2.getGlobal)(GLOBAL_UNIFY_TAGITEMS); };
         exports.getTagItems = getTagItems;
         var initializeTagItems = function () {
-            console.log('initializeTagItems');
             var config = (0, unify_config_2.getUnifyConfig)();
             var tags = (0, exports.getTagsFromConfig)(config);
             // Iterate over tags (they should be loaded)
             var tagItems = new Map();
-            console.log('forEach tags');
             (0, util_2.forEach)(tags, function (tag) {
                 var ingr = (0, util_3.tryTag)(tag);
-                if (ingr) {
-                    var allStacks = ingr.getStacks();
-                    var stacks_1 = (0, util_2.filter)(allStacks, function (x) { return !(0, util_2.has)(config.exclude, x.getId()); });
-                    var foundStack_1;
-                    console.log('forEach config.priorities');
-                    (0, util_2.forEach)(config.priorities, function (mod) {
-                        foundStack_1 = (0, util_2.find)(stacks_1, function (stack) { return stack.getMod() === mod; });
-                        if (foundStack_1)
-                            return true;
-                    });
-                    foundStack_1 = foundStack_1 || (0, util_2.head)(allStacks);
-                    if (foundStack_1) {
-                        tagItems.set(tag, foundStack_1.getId());
-                    }
-                }
+                if (!ingr)
+                    return;
+                var allStacks = ingr.getStacks();
+                var stacks = (0, util_2.filter)(allStacks, function (x) { return !(0, util_2.has)(config.exclude, x.getId()); });
+                var foundStack;
+                (0, util_2.forEach)(config.priorities, function (mod) {
+                    foundStack = (0, util_2.find)(stacks, function (stack) { return stack.getMod() === mod; });
+                    if (foundStack)
+                        return true;
+                });
+                foundStack = foundStack || (0, util_2.head)(allStacks);
+                if (!foundStack)
+                    return;
+                tagItems.set(tag, foundStack.getId());
             });
             (0, exports.setTagItems)(tagItems);
         };
@@ -501,98 +498,93 @@ const runModule = () => {
             var tags = (0, tags_1.getTagsFromConfig)(config);
             // Replace input and output of recipes (and iterate over tags!)
             onEvent("recipes", function (event) {
-                console.log('onEvent recipes');
-                console.log('Unifying recipes for tags:');
-                console.log(tags);
                 // Update tags
                 (0, tags_1.initializeTagItems)();
+                if (!config.flags.RECIPE_UNIFY)
+                    return;
                 // Unify the rest
-                if (config.flags.RECIPE_UNIFY) {
-                    var tagItems_1 = (0, tags_1.getTagItems)();
-                    console.log('forEach tags');
-                    (0, util_4.forEach)(tags, function (tag) {
-                        var ingr = (0, util_5.tryTag)(tag);
-                        if (ingr) {
-                            var stacks = (0, util_4.filter)(ingr.getStacks(), function (stack) { return (0, util_4.has)(config.exclude, stack.getId()); });
-                            var oItem_1 = tagItems_1.get(tag);
-                            console.log('forEach stacks');
-                            (0, util_4.forEach)(stacks, function (iItem) {
-                                var stackIngr = Ingredient.of(iItem.getId());
-                                event.replaceInput({}, stackIngr, Ingredient.of("#" + tag));
-                                if (oItem_1) {
-                                    event.replaceOutput({}, stackIngr, Ingredient.of(oItem_1));
-                                }
-                            });
-                        }
+                var tagItems = (0, tags_1.getTagItems)();
+                (0, util_4.forEach)(tags, function (tag) {
+                    var ingr = (0, util_5.tryTag)(tag);
+                    if (!ingr)
+                        return;
+                    var stacks = (0, util_4.filter)(ingr.getStacks(), function (stack) { return (0, util_4.has)(config.exclude, stack.getId()); });
+                    var oItem = tagItems.get(tag);
+                    (0, util_4.forEach)(stacks, function (iItem) {
+                        var stackIngr = Ingredient.of(iItem.getId());
+                        event.replaceInput({}, stackIngr, Ingredient.of("#" + tag));
+                        if (!oItem)
+                            return;
+                        event.replaceOutput({}, stackIngr, Ingredient.of(oItem));
                     });
-                }
+                });
             });
             // Handle inventory change (to check for unificaiton)
             // Unfortunately it gets called twice due to setting the inventory.
             onEvent("player.inventory.changed", function (event) {
-                console.log('onEvent player.inventory.changed');
-                if (config.flags.INVENTORY_UNIFY) {
-                    // Get held item
-                    var heldItem_1 = event.getItem();
-                    var itemId_1 = heldItem_1.getId();
-                    // Check if item is excluded
-                    if ((0, util_4.has)(config.exclude, itemId_1))
+                var player = event.getEntity();
+                if (player.getInventory().getClass().getName() === "net.minecraft.inventory.container.PlayerContainer")
+                    return;
+                if (!config.flags.INVENTORY_UNIFY)
+                    return;
+                // Get held item
+                var heldItem = event.getItem();
+                var itemId = heldItem.getId();
+                // Check if item is excluded
+                if ((0, util_4.has)(config.exclude, itemId))
+                    return;
+                var tagItems = (0, tags_1.getTagItems)();
+                // Check for every tag in the list
+                (0, util_4.forEach)(tags, function (tag) {
+                    var ingr = (0, util_5.tryTag)(tag);
+                    if (!ingr || !ingr.test(heldItem))
                         return;
-                    var tagItems_2 = (0, tags_1.getTagItems)();
-                    // Check for every tag in the list
-                    console.log('forEach tags');
-                    (0, util_4.forEach)(tags, function (tag) {
-                        var ingr = (0, util_5.tryTag)(tag);
-                        if (ingr && ingr.test(heldItem_1)) {
-                            // If item is in tag, determine if it needs to be changed
-                            var tItem = tagItems_2.get(tag);
-                            if (tItem && tItem != itemId_1) {
-                                // Fix slot number
-                                var slot = event.getSlot();
-                                if (slot <= 5)
-                                    slot += 36;
-                                else if (slot == 45)
-                                    slot = 40;
-                                else if (slot >= 36)
-                                    slot -= 36;
-                                var newItem = Ingredient.of(tItem).getFirst().withCount(heldItem_1.getCount());
-                                // Update item
-                                event.getEntity().getInventory().set(slot, newItem);
-                            }
-                            return true;
-                        }
-                    });
-                }
+                    // If item is in tag, determine if it needs to be changed
+                    var tItem = tagItems.get(tag);
+                    if (!tItem || tItem === itemId)
+                        return;
+                    // Fix slot number
+                    var slot = event.getSlot();
+                    if (slot <= 5)
+                        slot += 36;
+                    else if (slot == 45)
+                        slot = 40;
+                    else if (slot >= 36)
+                        slot -= 36;
+                    var newItem = Ingredient.of(tItem).getFirst().withCount(heldItem.getCount());
+                    // Update item
+                    event.getEntity().getInventory().set(slot, newItem);
+                    return true;
+                });
             });
             // Items on ground
             onEvent("entity.spawned", function (event) {
                 console.log('onEvent entity.spawned');
-                if (config.flags.ITEM_UNIFY) {
-                    var entity = event.getEntity();
-                    if (entity.getType() == "minecraft:item") {
-                        var itemEntity_1 = entity;
-                        var gItem_1 = itemEntity_1.getItem();
-                        var itemId_2 = gItem_1.getId();
-                        // Check if item is excluded
-                        if ((0, util_4.has)(config.exclude, itemId_2))
-                            return;
-                        var tagItems_3 = (0, tags_1.getTagItems)();
-                        // Check for every tag in the list
-                        console.log('forEach tags');
-                        (0, util_4.forEach)(tags, function (tag) {
-                            var ingr = (0, util_5.tryTag)(tag);
-                            if (ingr && ingr.test(gItem_1)) {
-                                // If item is in tag, determine if it needs to be changed
-                                var tItem = tagItems_3.get(tag);
-                                if (tItem && tItem != itemId_2) {
-                                    var newItem = Ingredient.of(tItem).getFirst().withCount(gItem_1.getCount());
-                                    itemEntity_1.setItem(newItem);
-                                }
-                                return true;
-                            }
-                        });
-                    }
-                }
+                if (!config.flags.ITEM_UNIFY)
+                    return;
+                var entity = event.getEntity();
+                if (entity.getType() !== "minecraft:item")
+                    return;
+                var itemEntity = entity;
+                var gItem = itemEntity.getItem();
+                var itemId = gItem.getId();
+                // Check if item is excluded
+                if ((0, util_4.has)(config.exclude, itemId))
+                    return;
+                var tagItems = (0, tags_1.getTagItems)();
+                // Check for every tag in the list
+                (0, util_4.forEach)(tags, function (tag) {
+                    var ingr = (0, util_5.tryTag)(tag);
+                    if (!ingr || !ingr.test(gItem))
+                        return;
+                    // If item is in tag, determine if it needs to be changed
+                    var tItem = tagItems.get(tag);
+                    if (!tItem || tItem === itemId)
+                        return;
+                    var newItem = Ingredient.of(tItem).getFirst().withCount(gItem.getCount());
+                    itemEntity.setItem(newItem);
+                    return true;
+                });
             });
         };
         exports.initializeUnifyServer = initializeUnifyServer;
