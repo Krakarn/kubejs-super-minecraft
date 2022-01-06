@@ -1,3 +1,9 @@
+# kubejs-super-minecraft
+
+This is my kubejs script project for my private modpack, Super Minecraft.
+
+# Original README.txt from KubeJS:
+
 Find more info on the website: https://kubejs.com/
 
 Directory information:
