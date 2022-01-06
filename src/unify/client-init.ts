@@ -8,30 +8,32 @@ import { tryTag } from "./util";
 export const initializeUnifyClient = (providedConfig?: UnifyConfig) => {
     const config = providedConfig || getUnifyConfig();
     const tags = getTagsFromConfig(config);
-    const tagItems = getTagItems();
 
     onEvent("jei.hide.items", event => {
-        if (config.flags.HIDE_UNIFIED_ITEMS) {
-            try {
-                forEach(tags, tag => {
-                    const ingr = tryTag(tag);
+        if (!config.flags.HIDE_UNIFIED_ITEMS) return;
 
-                    if (ingr) {
-                        const stacks = ingr.getStacks();
-                        const tItem = tagItems.get(tag);
+        const tagItems = getTagItems();
 
-                        forEach(stacks, s => {
-                            const stackId = s.getId();
+        try {
+            forEach(tags, tag => {
+                const ingr = tryTag(tag);
 
-                            if (stackId != tItem && !has(config.exclude, stackId)) {
-                                event.hide(stackId);
-                            }
-                        });
-                    }
+                if (!ingr) return;
+
+                const stacks = ingr.getStacks();
+                const tItem = tagItems.get(tag);
+
+                forEach(stacks, s => {
+                    const stackId = s.getId();
+
+                    if (stackId === tItem || has(config.exclude, stackId)) return;
+
+                    event.hide(stackId);
                 });
-            } catch (err) {
-                console.error("Failure to hide unified items in JEI. Press F3+T to reload client and retry");
-            }
+            });
+        } catch (err) {
+            console.error("Failure to hide unified items in JEI. Press F3+T to reload client and retry.");
+            console.error("Error message: " + (err as Error)?.message);
         }
     })
 };

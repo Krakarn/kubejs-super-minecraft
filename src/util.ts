@@ -15,6 +15,7 @@ export interface KeyedIterable<K, T, D> extends Iterable<D> {
     entries(): IterableIterator<[K, T]>;
     keys(): IterableIterator<K>;
     values(): IterableIterator<T>;
+    iterator?(): IterableIterator<T>;
 }
 
 declare global {
@@ -37,24 +38,30 @@ export const forEach = <TIterable extends Iterable<unknown>>(iterable: TIterable
 
     const keyedIterable = iterable as unknown as KeyedIterable<K, T, unknown>;
 
-    if (typeof keyedIterable.forEach === 'function') {
-        keyedIterable.forEach((x, i) => f(x, i));
-        return;
-    } else {
-        const aux = (it: Iterator<[K, T]>) => {
-            const next = it.next();
-            if (next.done) {
-                return;
-            }
-            const v: [K, T] = next.value;
-            if (f(v[1], v[0]) === true) {
-                return;
-            }
-            aux(it);
-        };
-
-        const it = (iterable as unknown as KeyedIterable<K, T, unknown>).entries();
+    const aux = (it: Iterator<[K, T]>) => {
+        const next = it.next();
+        if (next.done) {
+            return;
+        }
+        const v: [K, T] = next.value;
+        if (f(v[1], v[0]) === true) {
+            return;
+        }
         aux(it);
+    };
+
+    try {
+        if (typeof keyedIterable.entries !== 'function' && typeof keyedIterable.forEach === 'function') {
+            const arr: [K, T][] = [];
+            keyedIterable.forEach((t, k) => arr.push([k, t]));
+            const it = arr.values();
+            aux(it);
+        } else {
+            const it = keyedIterable.entries();
+            aux(it);
+        }
+    } catch(e) {
+        console.error('Error message: "' + (e as Error)?.message + '". Not able to create iterator from type ' + keyedIterable.constructor + ' with value: ' + keyedIterable);
     }
 };
 
@@ -114,3 +121,8 @@ export const find = <T>(iterable: Iterable<T>, predicate: (t: T) => boolean): T 
 export const has = <T>(iterable: Iterable<T>, item: T): boolean => find(iterable, t => t === item) !== undefined;
 
 export const head = <T>(iterable: Iterable<T>): T | undefined => find(iterable, () => true);
+
+export const range = (n: number): number[] => {
+    if (n < 0) return [];
+    return range(n - 1).concat([n]);
+};

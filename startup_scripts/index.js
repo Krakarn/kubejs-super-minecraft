@@ -280,7 +280,7 @@ const runModule = () => {
     define("src/util", ["require", "exports", "src/kubejs-typings/src/index"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
-        exports.head = exports.has = exports.find = exports.size = exports.map = exports.filter = exports.fold = exports.forEach = exports.getGlobal = exports.setGlobal = void 0;
+        exports.range = exports.head = exports.has = exports.find = exports.size = exports.map = exports.filter = exports.fold = exports.forEach = exports.getGlobal = exports.setGlobal = void 0;
         var setGlobal = function (key, value) {
             global[key] = value;
         };
@@ -293,25 +293,33 @@ const runModule = () => {
         };
         exports.getGlobal = getGlobal;
         var forEach = function (iterable, f) {
+            var _a;
             var keyedIterable = iterable;
-            if (typeof keyedIterable.forEach === 'function') {
-                keyedIterable.forEach(function (x, i) { return f(x, i); });
-                return;
+            var aux = function (it) {
+                var next = it.next();
+                if (next.done) {
+                    return;
+                }
+                var v = next.value;
+                if (f(v[1], v[0]) === true) {
+                    return;
+                }
+                aux(it);
+            };
+            try {
+                if (typeof keyedIterable.entries !== 'function' && typeof keyedIterable.forEach === 'function') {
+                    var arr_1 = [];
+                    keyedIterable.forEach(function (t, k) { return arr_1.push([k, t]); });
+                    var it = arr_1.values();
+                    aux(it);
+                }
+                else {
+                    var it = keyedIterable.entries();
+                    aux(it);
+                }
             }
-            else {
-                var aux_1 = function (it) {
-                    var next = it.next();
-                    if (next.done) {
-                        return;
-                    }
-                    var v = next.value;
-                    if (f(v[1], v[0]) === true) {
-                        return;
-                    }
-                    aux_1(it);
-                };
-                var it = iterable.entries();
-                aux_1(it);
+            catch (e) {
+                console.error('Error message: "' + ((_a = e) === null || _a === void 0 ? void 0 : _a.message) + '". Not able to create iterator from type ' + keyedIterable.constructor + ' with value: ' + keyedIterable);
             }
         };
         exports.forEach = forEach;
@@ -355,6 +363,12 @@ const runModule = () => {
         exports.has = has;
         var head = function (iterable) { return (0, exports.find)(iterable, function () { return true; }); };
         exports.head = head;
+        var range = function (n) {
+            if (n < 0)
+                return [];
+            return (0, exports.range)(n - 1).concat([n]);
+        };
+        exports.range = range;
     });
     define("src/unify/unify-config", ["require", "exports", "src/util"], function (require, exports, util_1) {
         "use strict";
@@ -380,9 +394,12 @@ const runModule = () => {
                     RECIPE_UNIFY: true,
                     HIDE_UNIFIED_ITEMS: true,
                 },
-                priorities: [
+                modPriorities: [
+                    "cavesandcliffs",
                     "minecraft",
                     "alltheores",
+                    "create",
+                    "immersiveengineering",
                     "mekanism",
                     "thermal",
                     "silents_mechanisms",
@@ -391,13 +408,12 @@ const runModule = () => {
                 ],
                 exclude: [],
                 includeTags: [
-                    "forge:plates/iron",
-                    "forge:gears/iron",
-                    "forge:silicon"
+                    "forge:silicon",
                 ],
                 tagGen: new Map([
                     ['gold', ["gears", "plates"]],
                     ['diamond', ["gears", "plates"]],
+                    ['iron', ['storage_blocks', 'ingots', 'nuggets', 'dusts', 'ores', 'gears', 'plates']],
                     ['copper', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
                     ['tin', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
                     ['aluminum', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
@@ -413,6 +429,9 @@ const runModule = () => {
                     ['osmium', ["ingots", "ores"]],
                     ['sulfur', ["dusts", "ores"]],
                     ['silicon', ["gems"]],
+                ]),
+                preferredItems: new Map([
+                    ['ores', 'raw_%m'],
                 ]),
             },
         };

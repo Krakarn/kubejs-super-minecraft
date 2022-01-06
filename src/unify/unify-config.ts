@@ -11,10 +11,11 @@ export type UnifyConfig = {
         // Whether or not to hide not-first materials in jei (requires secondary script)
         HIDE_UNIFIED_ITEMS: boolean;
     };
-    priorities: Iterable<string>;
+    modPriorities: Iterable<string>;
     exclude: Iterable<string>;
     includeTags: Iterable<string>;
     tagGen: Map<string, Iterable<string>>;
+    preferredItems: Map<string, string>;
 };
 
 const GLOBAL_UNIFY_CONFIG = 'unify:config';

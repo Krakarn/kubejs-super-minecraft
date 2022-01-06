@@ -12,9 +12,12 @@ export const config: Config = {
             RECIPE_UNIFY: true,
             HIDE_UNIFIED_ITEMS: true,
         },
-        priorities: [
+        modPriorities: [
+            "cavesandcliffs",
             "minecraft",
             "alltheores",
+            "create",
+            "immersiveengineering",
             "mekanism",
             "thermal",
             "silents_mechanisms",
@@ -23,13 +26,12 @@ export const config: Config = {
         ],
         exclude: [],
         includeTags: [
-            "forge:plates/iron",
-            "forge:gears/iron",
-            "forge:silicon"
+            "forge:silicon",
         ],
         tagGen: new Map([
             ['gold', ["gears","plates"]],
             ['diamond', ["gears","plates"]],
+            ['iron', ['storage_blocks','ingots','nuggets','dusts','ores','gears','plates']],
             ['copper', ["storage_blocks","ingots","nuggets","dusts","ores","gears","plates"]],
             ['tin', ["storage_blocks","ingots","nuggets","dusts","ores","gears","plates"]],
             ['aluminum', ["storage_blocks","ingots","nuggets","dusts","ores","gears","plates"]],
@@ -45,6 +47,9 @@ export const config: Config = {
             ['osmium', ["ingots","ores"]],
             ['sulfur', ["dusts","ores"]],
             ['silicon', ["gems"]],
+        ]),
+        preferredItems: new Map([
+            ['ores', 'raw_%m'],
         ]),
     },
 };

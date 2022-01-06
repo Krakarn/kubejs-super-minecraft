@@ -280,7 +280,7 @@ const runModule = () => {
     define("src/util", ["require", "exports", "src/kubejs-typings/src/index"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
-        exports.head = exports.has = exports.find = exports.size = exports.map = exports.filter = exports.fold = exports.forEach = exports.getGlobal = exports.setGlobal = void 0;
+        exports.range = exports.head = exports.has = exports.find = exports.size = exports.map = exports.filter = exports.fold = exports.forEach = exports.getGlobal = exports.setGlobal = void 0;
         var setGlobal = function (key, value) {
             global[key] = value;
         };
@@ -293,25 +293,33 @@ const runModule = () => {
         };
         exports.getGlobal = getGlobal;
         var forEach = function (iterable, f) {
+            var _a;
             var keyedIterable = iterable;
-            if (typeof keyedIterable.forEach === 'function') {
-                keyedIterable.forEach(function (x, i) { return f(x, i); });
-                return;
+            var aux = function (it) {
+                var next = it.next();
+                if (next.done) {
+                    return;
+                }
+                var v = next.value;
+                if (f(v[1], v[0]) === true) {
+                    return;
+                }
+                aux(it);
+            };
+            try {
+                if (typeof keyedIterable.entries !== 'function' && typeof keyedIterable.forEach === 'function') {
+                    var arr_1 = [];
+                    keyedIterable.forEach(function (t, k) { return arr_1.push([k, t]); });
+                    var it = arr_1.values();
+                    aux(it);
+                }
+                else {
+                    var it = keyedIterable.entries();
+                    aux(it);
+                }
             }
-            else {
-                var aux_1 = function (it) {
-                    var next = it.next();
-                    if (next.done) {
-                        return;
-                    }
-                    var v = next.value;
-                    if (f(v[1], v[0]) === true) {
-                        return;
-                    }
-                    aux_1(it);
-                };
-                var it = iterable.entries();
-                aux_1(it);
+            catch (e) {
+                console.error('Error message: "' + ((_a = e) === null || _a === void 0 ? void 0 : _a.message) + '". Not able to create iterator from type ' + keyedIterable.constructor + ' with value: ' + keyedIterable);
             }
         };
         exports.forEach = forEach;
@@ -355,6 +363,12 @@ const runModule = () => {
         exports.has = has;
         var head = function (iterable) { return (0, exports.find)(iterable, function () { return true; }); };
         exports.head = head;
+        var range = function (n) {
+            if (n < 0)
+                return [];
+            return (0, exports.range)(n - 1).concat([n]);
+        };
+        exports.range = range;
     });
     define("src/unify/unify-config", ["require", "exports", "src/util"], function (require, exports, util_1) {
         "use strict";
@@ -380,9 +394,12 @@ const runModule = () => {
                     RECIPE_UNIFY: true,
                     HIDE_UNIFIED_ITEMS: true,
                 },
-                priorities: [
+                modPriorities: [
+                    "cavesandcliffs",
                     "minecraft",
                     "alltheores",
+                    "create",
+                    "immersiveengineering",
                     "mekanism",
                     "thermal",
                     "silents_mechanisms",
@@ -391,13 +408,12 @@ const runModule = () => {
                 ],
                 exclude: [],
                 includeTags: [
-                    "forge:plates/iron",
-                    "forge:gears/iron",
-                    "forge:silicon"
+                    "forge:silicon",
                 ],
                 tagGen: new Map([
                     ['gold', ["gears", "plates"]],
                     ['diamond', ["gears", "plates"]],
+                    ['iron', ['storage_blocks', 'ingots', 'nuggets', 'dusts', 'ores', 'gears', 'plates']],
                     ['copper', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
                     ['tin', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
                     ['aluminum', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
@@ -414,6 +430,9 @@ const runModule = () => {
                     ['sulfur', ["dusts", "ores"]],
                     ['silicon', ["gems"]],
                 ]),
+                preferredItems: new Map([
+                    ['ores', 'raw_%m'],
+                ]),
             },
         };
         var initializeConfig = function () {
@@ -425,10 +444,10 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
-    define("src/unify/util", ["require", "exports"], function (require, exports) {
+    define("src/unify/util", ["require", "exports", "src/util"], function (require, exports, util_2) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
-        exports.tryTag = void 0;
+        exports.findValidInventorySlotForItem = exports.inventoryToSlotsIterable = exports.tryTag = void 0;
         var tryTag = function (tag) {
             try {
                 return Ingredient.of("#" + tag);
@@ -438,19 +457,27 @@ const runModule = () => {
             }
         };
         exports.tryTag = tryTag;
+        var inventoryToSlotsIterable = function (inventory) {
+            return (0, util_2.range)(inventory.getSize());
+        };
+        exports.inventoryToSlotsIterable = inventoryToSlotsIterable;
+        var findValidInventorySlotForItem = function (inventory, item) {
+            return (0, util_2.find)((0, exports.inventoryToSlotsIterable)(inventory), function (slot) { return inventory.isItemValid(slot, item); });
+        };
+        exports.findValidInventorySlotForItem = findValidInventorySlotForItem;
     });
-    define("src/unify/tags", ["require", "exports", "src/util", "src/unify/unify-config", "src/unify/util"], function (require, exports, util_2, unify_config_2, util_3) {
+    define("src/unify/tags", ["require", "exports", "src/util", "src/unify/unify-config", "src/unify/util"], function (require, exports, util_3, unify_config_2, util_4) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
-        exports.initializeTagItems = exports.getTagItems = exports.setTagItems = exports.getTagsFromConfig = void 0;
+        exports.convertToUnifiedItem = exports.initializeTagItems = exports.getTagItems = exports.setTagItems = exports.getTagsFromConfig = void 0;
         var GLOBAL_UNIFY_TAGITEMS = 'unify:tagitems';
         var getTagsFromConfig = function (config) {
             var tags = new Set();
-            (0, util_2.forEach)(config.includeTags, function (tag) {
+            (0, util_3.forEach)(config.includeTags, function (tag) {
                 tags.add(tag);
             });
-            (0, util_2.forEach)(config.tagGen, function (types, material) {
-                (0, util_2.forEach)(types, function (type) {
+            (0, util_3.forEach)(config.tagGen, function (types, material) {
+                (0, util_3.forEach)(types, function (type) {
                     tags.add("forge:".concat(type, "/").concat(material));
                 });
             });
@@ -458,38 +485,82 @@ const runModule = () => {
         };
         exports.getTagsFromConfig = getTagsFromConfig;
         var setTagItems = function (tagItems) {
-            (0, util_2.setGlobal)(GLOBAL_UNIFY_TAGITEMS, tagItems);
+            (0, util_3.setGlobal)(GLOBAL_UNIFY_TAGITEMS, tagItems);
         };
         exports.setTagItems = setTagItems;
-        var getTagItems = function () { return (0, util_2.getGlobal)(GLOBAL_UNIFY_TAGITEMS); };
+        var getTagItems = function () { return (0, util_3.getGlobal)(GLOBAL_UNIFY_TAGITEMS); };
         exports.getTagItems = getTagItems;
+        var getTagType = function (tag) { var _a; return (_a = tag.match(/:(\w+)/)) === null || _a === void 0 ? void 0 : _a[1]; };
+        var getTagMaterial = function (tag) { var _a; return (_a = tag.match(/:\w+\/(\w+)/)) === null || _a === void 0 ? void 0 : _a[1]; };
+        var getPreferredItemString = function (preferredItem, options) {
+            var _a;
+            return preferredItem
+                .replace(/\%m/g, (_a = options.material) !== null && _a !== void 0 ? _a : 'undefined');
+        };
+        var matchPreferredItem = function (preferredItem, itemId, options) {
+            return itemId.match(/:(\w+)/)[1] === getPreferredItemString(preferredItem, options);
+        };
         var initializeTagItems = function () {
             var config = (0, unify_config_2.getUnifyConfig)();
             var tags = (0, exports.getTagsFromConfig)(config);
             // Iterate over tags (they should be loaded)
             var tagItems = new Map();
-            (0, util_2.forEach)(tags, function (tag) {
-                var ingr = (0, util_3.tryTag)(tag);
+            console.log('building tag items');
+            (0, util_3.forEach)(tags, function (tag) {
+                var _a;
+                console.log('processing tag ' + tag);
+                var ingr = (0, util_4.tryTag)(tag);
                 if (!ingr)
                     return;
+                var tagType = (_a = getTagType(tag)) !== null && _a !== void 0 ? _a : '';
+                var tagMaterial = getTagMaterial(tag);
                 var allStacks = ingr.getStacks();
-                var stacks = (0, util_2.filter)(allStacks, function (x) { return !(0, util_2.has)(config.exclude, x.getId()); });
+                var stacks = (0, util_3.filter)(allStacks, function (x) { return !(0, util_3.has)(config.exclude, x.getId()); });
                 var foundStack;
-                (0, util_2.forEach)(config.priorities, function (mod) {
-                    foundStack = (0, util_2.find)(stacks, function (stack) { return stack.getMod() === mod; });
+                console.log('[' + tagType + '/' + tagMaterial + ']: items ' + Array.from((0, util_3.map)(stacks, function (x) { return x.getId(); })).join(', '));
+                (0, util_3.forEach)(config.modPriorities, function (mod) {
+                    var matchingStacks = (0, util_3.filter)(stacks, function (stack) { return stack.getMod() === mod; });
+                    if ((0, util_3.size)(matchingStacks) === 0)
+                        return;
+                    var preferredItem = config.preferredItems.get(tagType);
+                    if (preferredItem)
+                        foundStack = (0, util_3.find)(matchingStacks, function (stack) { return matchPreferredItem(preferredItem, stack.getId(), { material: tagMaterial }); });
+                    else
+                        foundStack = (0, util_3.head)(matchingStacks);
                     if (foundStack)
                         return true;
                 });
-                foundStack = foundStack || (0, util_2.head)(allStacks);
+                foundStack = foundStack || (0, util_3.head)(allStacks);
                 if (!foundStack)
                     return;
+                console.log('set to item ' + foundStack.getId());
                 tagItems.set(tag, foundStack.getId());
             });
+            console.log('tagItems');
+            console.log(Array.from(tagItems).join(', '));
             (0, exports.setTagItems)(tagItems);
         };
         exports.initializeTagItems = initializeTagItems;
+        var convertToUnifiedItem = function (item, tags) {
+            var tagItems = (0, exports.getTagItems)();
+            var itemId = item.getId();
+            var convertedItem;
+            (0, util_3.forEach)(tags, function (tag) {
+                var ingr = (0, util_4.tryTag)(tag);
+                if (!ingr || !ingr.test(item))
+                    return;
+                // If item is in tag, determine if it needs to be changed
+                var tItem = tagItems.get(tag);
+                if (!tItem || tItem === itemId)
+                    return;
+                convertedItem = Ingredient.of(tItem).getFirst().withCount(item.getCount());
+                return true;
+            });
+            return convertedItem;
+        };
+        exports.convertToUnifiedItem = convertToUnifiedItem;
     });
-    define("src/unify/server-init", ["require", "exports", "src/util", "src/unify/tags", "src/unify/unify-config", "src/unify/util"], function (require, exports, util_4, tags_1, unify_config_3, util_5) {
+    define("src/unify/server-init", ["require", "exports", "src/util", "src/unify/tags", "src/unify/unify-config", "src/unify/util"], function (require, exports, util_5, tags_1, unify_config_3, util_6) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
         exports.initializeUnifyServer = void 0;
@@ -504,13 +575,13 @@ const runModule = () => {
                     return;
                 // Unify the rest
                 var tagItems = (0, tags_1.getTagItems)();
-                (0, util_4.forEach)(tags, function (tag) {
-                    var ingr = (0, util_5.tryTag)(tag);
+                (0, util_5.forEach)(tags, function (tag) {
+                    var ingr = (0, util_6.tryTag)(tag);
                     if (!ingr)
                         return;
-                    var stacks = (0, util_4.filter)(ingr.getStacks(), function (stack) { return (0, util_4.has)(config.exclude, stack.getId()); });
+                    var stacks = (0, util_5.filter)(ingr.getStacks(), function (stack) { return (0, util_5.has)(config.exclude, stack.getId()); });
                     var oItem = tagItems.get(tag);
-                    (0, util_4.forEach)(stacks, function (iItem) {
+                    (0, util_5.forEach)(stacks, function (iItem) {
                         var stackIngr = Ingredient.of(iItem.getId());
                         event.replaceInput({}, stackIngr, Ingredient.of("#" + tag));
                         if (!oItem)
@@ -522,44 +593,25 @@ const runModule = () => {
             // Handle inventory change (to check for unificaiton)
             // Unfortunately it gets called twice due to setting the inventory.
             onEvent("player.inventory.changed", function (event) {
-                var player = event.getEntity();
-                if (player.getInventory().getClass().getName() === "net.minecraft.inventory.container.PlayerContainer")
-                    return;
                 if (!config.flags.INVENTORY_UNIFY)
                     return;
                 // Get held item
                 var heldItem = event.getItem();
                 var itemId = heldItem.getId();
                 // Check if item is excluded
-                if ((0, util_4.has)(config.exclude, itemId))
+                if ((0, util_5.has)(config.exclude, itemId))
                     return;
-                var tagItems = (0, tags_1.getTagItems)();
-                // Check for every tag in the list
-                (0, util_4.forEach)(tags, function (tag) {
-                    var ingr = (0, util_5.tryTag)(tag);
-                    if (!ingr || !ingr.test(heldItem))
-                        return;
-                    // If item is in tag, determine if it needs to be changed
-                    var tItem = tagItems.get(tag);
-                    if (!tItem || tItem === itemId)
-                        return;
-                    // Fix slot number
-                    var slot = event.getSlot();
-                    if (slot <= 5)
-                        slot += 36;
-                    else if (slot == 45)
-                        slot = 40;
-                    else if (slot >= 36)
-                        slot -= 36;
-                    var newItem = Ingredient.of(tItem).getFirst().withCount(heldItem.getCount());
-                    // Update item
-                    event.getEntity().getInventory().set(slot, newItem);
-                    return true;
-                });
+                var unifiedItem = (0, tags_1.convertToUnifiedItem)(heldItem, tags);
+                if (!unifiedItem)
+                    return;
+                var inventory = event.getEntity().getInventory();
+                var slot = event.getSlot();
+                console.log('unifiedItem ' + unifiedItem.getId() + ' ' + unifiedItem.getMod());
+                inventory.set(slot, unifiedItem);
+                inventory.markDirty();
             });
             // Items on ground
             onEvent("entity.spawned", function (event) {
-                console.log('onEvent entity.spawned');
                 if (!config.flags.ITEM_UNIFY)
                     return;
                 var entity = event.getEntity();
@@ -569,22 +621,12 @@ const runModule = () => {
                 var gItem = itemEntity.getItem();
                 var itemId = gItem.getId();
                 // Check if item is excluded
-                if ((0, util_4.has)(config.exclude, itemId))
+                if ((0, util_5.has)(config.exclude, itemId))
                     return;
-                var tagItems = (0, tags_1.getTagItems)();
-                // Check for every tag in the list
-                (0, util_4.forEach)(tags, function (tag) {
-                    var ingr = (0, util_5.tryTag)(tag);
-                    if (!ingr || !ingr.test(gItem))
-                        return;
-                    // If item is in tag, determine if it needs to be changed
-                    var tItem = tagItems.get(tag);
-                    if (!tItem || tItem === itemId)
-                        return;
-                    var newItem = Ingredient.of(tItem).getFirst().withCount(gItem.getCount());
-                    itemEntity.setItem(newItem);
-                    return true;
-                });
+                var unifiedItem = (0, tags_1.convertToUnifiedItem)(gItem, tags);
+                if (!unifiedItem)
+                    return;
+                itemEntity.setItem(unifiedItem);
             });
         };
         exports.initializeUnifyServer = initializeUnifyServer;
@@ -596,6 +638,15 @@ const runModule = () => {
         settings.logRemovedRecipes = true;
         settings.logSkippedRecipes = false;
         settings.logErroringRecipes = true;
+        var p = function () {
+            console.log('[].entries()');
+            [].entries();
+            console.log('new Set().entries()');
+            new Set().entries();
+            console.log('Array.from(new Set()).entries()');
+            Array.from(new Set()).entries();
+        };
+        p();
         (0, config_1.initializeConfig)();
         (0, server_init_1.initializeUnifyServer)();
     });
