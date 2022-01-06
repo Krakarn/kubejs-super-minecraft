@@ -4,7 +4,7 @@
   "description": "Find more info on the website: https://kubejs.com/",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "gulp",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
