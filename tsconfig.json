@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "ES5",
+        "module": "amd",
+        "moduleResolution": "node",
+        "strict": true,
+        "rootDir": ".",
+        "lib": [
+            "es2015",
+            "dom"
+        ]
+    },
+    "files": [
+        "./src/client_scripts/index.ts",
+        "./src/server_scripts/index.ts",
+        "./src/startup_scripts/index.ts"
+    ],
+    "include": ["./src/**/*.d.ts"]
+}
