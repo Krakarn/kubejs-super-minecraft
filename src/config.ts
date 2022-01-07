@@ -39,7 +39,7 @@ export const config: Config = {
             ['silver', ["storage_blocks","ingots","nuggets","dusts","ores","gears","plates"]],
             ['nickel', ["storage_blocks","ingots","nuggets","dusts","ores","gears","plates"]],
             ['bronze', ["storage_blocks","ingots","nuggets","dusts","ores","gears","plates"]],
-            ['steel', ["storage_blocks","ingots","nuggets","dusts"]],
+            ['steel', ["storage_blocks","ingots", "nuggets","dusts","plates"]],
             ['platinum', ["storage_blocks","ingots","nuggets","dusts","ores"]],
             ['uranium', ["storage_blocks","ingots","nuggets","dusts","ores"]],
             ['iridium', ["storage_blocks","ingots","nuggets","dusts","ores"]],

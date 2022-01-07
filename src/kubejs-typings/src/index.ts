@@ -1,5 +1,5 @@
 import { IngredientStatic } from "./classes/ingredient";
-import { CommandRegistryEvent, CommandRunEvent, EntityTypeTagsEvent, FluidTagsEvent, InitEvent, LoadedEvent, PostInitEvent, RecipesEvent } from "./events/general";
+import { CommandRegistryEvent, CommandRunEvent, EntityTypeTagsEvent, FluidTagsEvent, InitEvent, LoadedEvent, PostInitEvent, RecipeEvent } from "./events/general";
 import { BlockBreakEvent, BlockDropsEvent, BlockLeftClickEvent, BlockMissingMappingsEvent, BlockPlaceEvent, BlockRegistryEvent, BlockRightClickEvent, BlockTagsEvent } from './events/block';
 import { ClientDebugInfoLeftEvent, ClientDebugInfoRightEvent, ClientInitEvent, ClientItemTooltipEvent, ClientLoggedInEvent, ClientLoggedOutEvent, ClientTickEvent } from './events/client';
 import { EntityAttackEvent, EntityCheckSpawnEvent, EntityDeathEvent, EntityDropsEvent, EntitySpawnedEvent } from './events/entity';
@@ -7,6 +7,8 @@ import { ItemCraftedEvent, ItemEntityInteractEvent, ItemLeftClickEvent, ItemMiss
 import { PlayerAdvancementEvent, PlayerChatEvent, PlayerChestClosedEvent, PlayerChestOpenedEvent, PlayerDataFromClientEvent, PlayerDataFromServerEvent, PlayerInventoryChangedEvent, PlayerInventoryClosedEvent, PlayerInventoryOpenedEvent, PlayerLoggedInEvent, PlayerLoggedOutEvent, PlayerTickEvent } from './events/player';
 import { ServerDatapackFirstEvent, ServerDatapackLastEvent, ServerLoadEvent, ServerTickEvent, ServerUnloadEvent } from './events/server';
 import { WorldExplosionPostEvent, WorldExplosionPreEvent, WorldLoadEvent, WorldTickEvent, WorldUnloadEvent } from './events/world';
+
+import './integrations/create';
 
 export interface KubeJSSettings {
 	logAddedRecipes: boolean;
@@ -38,7 +40,7 @@ declare global {
 		"server.tick": ServerTickEvent;
 		"server.datapack.first": ServerDatapackFirstEvent;
 		"server.datapack.last": ServerDatapackLastEvent;
-		"recipes": RecipesEvent;
+		"recipes": RecipeEvent;
 		"world.load": WorldLoadEvent;
 		"world.unload": WorldUnloadEvent;
 		"world.tick": WorldTickEvent;

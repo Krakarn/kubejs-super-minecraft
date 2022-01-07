@@ -3,6 +3,7 @@ import { filter, forEach, has } from "../util";
 import { convertToUnifiedItem, getTagItems, getTagsFromConfig, initializeTagItems } from "./tags";
 import { getUnifyConfig, UnifyConfig } from "./unify-config";
 import { tryTag } from "./util";
+import '../kubejs-typings/src/integrations/create';
 
 export const initializeUnifyServer = (providedConfig?: UnifyConfig) => {
     const config = providedConfig || getUnifyConfig();
@@ -14,6 +15,8 @@ export const initializeUnifyServer = (providedConfig?: UnifyConfig) => {
         initializeTagItems();
 
         if (!config.flags.RECIPE_UNIFY) return;
+
+        event.recipes.createPressing(['immersiveengineering:plate_steel'], ['#forge:ingots/steel']);
 
         // Unify the rest
         const tagItems = getTagItems();

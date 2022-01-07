@@ -129,6 +129,14 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
+    define("src/kubejs-typings/src/classes/recipe", ["require", "exports"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
+    define("src/kubejs-typings/src/classes/recipe-type", ["require", "exports"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
     define("src/kubejs-typings/src/events/general", ["require", "exports"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -273,7 +281,11 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
-    define("src/kubejs-typings/src/index", ["require", "exports"], function (require, exports) {
+    define("src/kubejs-typings/src/integrations/create", ["require", "exports", "src/kubejs-typings/src/events/general"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
+    define("src/kubejs-typings/src/index", ["require", "exports", "src/kubejs-typings/src/integrations/create"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
@@ -421,7 +433,7 @@ const runModule = () => {
                     ['silver', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
                     ['nickel', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
                     ['bronze', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
-                    ['steel', ["storage_blocks", "ingots", "nuggets", "dusts"]],
+                    ['steel', ["storage_blocks", "ingots", "nuggets", "dusts", "plates"]],
                     ['platinum', ["storage_blocks", "ingots", "nuggets", "dusts", "ores"]],
                     ['uranium', ["storage_blocks", "ingots", "nuggets", "dusts", "ores"]],
                     ['iridium', ["storage_blocks", "ingots", "nuggets", "dusts", "ores"]],

@@ -129,6 +129,14 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
+    define("src/kubejs-typings/src/classes/recipe", ["require", "exports"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
+    define("src/kubejs-typings/src/classes/recipe-type", ["require", "exports"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
     define("src/kubejs-typings/src/events/general", ["require", "exports"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
@@ -273,7 +281,11 @@ const runModule = () => {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
-    define("src/kubejs-typings/src/index", ["require", "exports"], function (require, exports) {
+    define("src/kubejs-typings/src/integrations/create", ["require", "exports", "src/kubejs-typings/src/events/general"], function (require, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", { value: true });
+    });
+    define("src/kubejs-typings/src/index", ["require", "exports", "src/kubejs-typings/src/integrations/create"], function (require, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
     });
@@ -421,7 +433,7 @@ const runModule = () => {
                     ['silver', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
                     ['nickel', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
                     ['bronze', ["storage_blocks", "ingots", "nuggets", "dusts", "ores", "gears", "plates"]],
-                    ['steel', ["storage_blocks", "ingots", "nuggets", "dusts"]],
+                    ['steel', ["storage_blocks", "ingots", "nuggets", "dusts", "plates"]],
                     ['platinum', ["storage_blocks", "ingots", "nuggets", "dusts", "ores"]],
                     ['uranium', ["storage_blocks", "ingots", "nuggets", "dusts", "ores"]],
                     ['iridium', ["storage_blocks", "ingots", "nuggets", "dusts", "ores"]],
@@ -560,7 +572,7 @@ const runModule = () => {
         };
         exports.convertToUnifiedItem = convertToUnifiedItem;
     });
-    define("src/unify/server-init", ["require", "exports", "src/util", "src/unify/tags", "src/unify/unify-config", "src/unify/util"], function (require, exports, util_5, tags_1, unify_config_3, util_6) {
+    define("src/unify/server-init", ["require", "exports", "src/util", "src/unify/tags", "src/unify/unify-config", "src/unify/util", "src/kubejs-typings/src/integrations/create"], function (require, exports, util_5, tags_1, unify_config_3, util_6) {
         "use strict";
         Object.defineProperty(exports, "__esModule", { value: true });
         exports.initializeUnifyServer = void 0;
@@ -573,6 +585,7 @@ const runModule = () => {
                 (0, tags_1.initializeTagItems)();
                 if (!config.flags.RECIPE_UNIFY)
                     return;
+                event.recipes.createPressing(['immersiveengineering:plate_steel'], ['#forge:ingots/steel']);
                 // Unify the rest
                 var tagItems = (0, tags_1.getTagItems)();
                 (0, util_5.forEach)(tags, function (tag) {
